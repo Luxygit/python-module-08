@@ -1,17 +1,18 @@
-[tool.poetry]
-name = "matrix-loader"
+[project]
+name = "matrix"
 version = "0.1.0"
-description = "Zion dependency manager and data processing node"
-authors = ["Diego Varas <diego@zion.net>"]
-package-mode = false
+description = ""
+authors = [
+    {name = "Diego Vargas",email = "divaro_@hotmail.com"}
+]
+requires-python = "^3.14"
+dependencies = [
+    "numpy (>=2.5.0,<3.0.0)",
+    "pandas (>=3.0.3,<4.0.0)",
+    "matplotlib (>=3.11.0,<4.0.0)",
+]
 
-[tool.poetry.dependencies]
-python = "^3.10"
-pandas = "^2.1.0"
-numpy = "^1.25.0"
-matplotlib = "^3.7.2"
-requests = "^2.31.0"
 
 [build-system]
-requires = ["poetry-core"]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
 build-backend = "poetry.core.masonry.api"

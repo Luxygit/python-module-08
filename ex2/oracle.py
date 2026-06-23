@@ -2,16 +2,15 @@
 
 import os
 import sys
-from typing import Optional
 
 try:
-    from dotenv import load_dotenv
+    from dotenv import load_dotenv  # type: ignore
 except ImportError:
     print(
-            "[ERROR] The 'python-dotenv' package is missing.",
-            file=sys.stderr,
+            "[ERROR] The 'python-dotenv' package is missing."
+            "\nRun: pip install python-dotenv",
+            file=sys.stderr
             )
-    print("Run: pip install python-dotenv", file=sys.stderr)
     sys.exit(1)
 
 
@@ -22,14 +21,22 @@ def verify_security() -> None:
     target_key = "API_" + "KEY ="
     target_db = "DATABASE_" + "URL ="
     try:
-        # scans file for hardcoded secrets
+        """
+        looking for the target secret lines within our source code
+        os.environ.get reads env variables from systems memory
+        """
         with open(__file__, "r", encoding="utf-8") as current_file:
             for line in current_file:
-                if (target_key in line or target_db in line) and (
-                        "os.getenv" not in line and "os.environ" not in line
+                if (
+                        target_key in line or
+                        target_db in line) and (
+                        "os.getenv" not in line and
+                        "os.environ" not in line
                         ):
-                    if "target_key =" not in line and "target_db ="\
-                            not in line:
+                    if (
+                            "target_key =" not in line and
+                            "target_db =" not in line
+                            ):
                         no_secrets = False
                         break
         if no_secrets:
@@ -37,12 +44,12 @@ def verify_security() -> None:
         else:
             print("[CRITICAL] Hardcoded credentials exposed in source!")
     except Exception:
-        print("[WARN] Unable to execute automated static file analysis")
+        print("[CRITICAL] Unable to execute file analysis")
     if os.path.exists(".env"):
-        # verifying config presence
+        # verifying config file presence
         print("[OK] .env file properly configured")
     else:
-        print("[WARN] Running without a local .env configuration file")
+        print("[CRITICAL] Running without a local .env config file")
     try:
         # checking if environment registry is modifiable
         os.environ["_ORACLE_TEST_"] = "1"
@@ -53,43 +60,55 @@ def verify_security() -> None:
 
 
 def main() -> None:
-    """load config from local .env if present"""
+    """
+    load config from local .env file if present
+    os.getenv fetches these configs from memory, but in the case
+    of mode and log it offers a fallback value.
+    These are also overriden by environment variables if any.
+    """
     load_dotenv()
-    print("ORACLE STATUS: Reading the Matrix...")
-
-    # fetch config req via env get
-    mode: str = os.getenv("MATRIX_MODE", "development")
-    db_url: Optional[str] = os.getenv("DATABASE_URL")
-    api_key: Optional[str] = os.getenv("API_KEY")
-    log_level: str = os.getenv("LOG_LEGEL", "DEBUG")
-    zion_end: Optional[str] = os.getenv("ZION_ENDPOINT")
-
-    if not all([db_url, api_key, zion_end]):
+    print("\nORACLE STATUS: Reading the Matrix...")
+    mode: str = os.getenv("MATRIX_MODE", "development").strip()
+    db_url: str | None = os.getenv("DATABASE_URL")
+    api_key: str | None = os.getenv("API_KEY")
+    log_level: str = os.getenv("LOG_LEVEL", "DEBUG").strip()
+    zion_end: str | None = os.getenv("ZION_ENDPOINT")
+    if mode == "":
+        mode = "development"
+    if log_level == "":
+        log_level = "DEBUG"
+    allowed_modes = ["development", "production"]
+    if mode not in allowed_modes:
+        print(f"[ERROR] Access denied: Invalid MATRIX_MODE '{mode}'",
+              file=sys.stderr)
+        sys.exit(1)
+    raw_values = [
+            db_url.strip() if db_url else "",
+            api_key.strip() if api_key else "",
+            zion_end.strip() if zion_end else ""
+            ]
+    if any(val == "" for val in raw_values):
         print(
-                "\n[ERROR] Mainframe access denied: Missing configuration"
-                " properties", file=sys.stderr,
+                "\n[ERROR] Access denied: Missing configuration properties",
+                file=sys.stderr
                 )
-        print("Please copy and edit your configuration:", file=sys.stderr)
-        print("  cp .env.example .env", file=sys.stderr)
         sys.exit(1)
 
-    db_display = (
-            "Connected to production cluster"
-            if mode == "production"
-            else "Connected to local instance"
-            )
-    api_display = "Authenticated" if api_key else "Missing token"
-    zion_display = "Online" if zion_end else "Offline"
+    if mode == "production":
+        db_display = "Connected to production cluster"
+    else:
+        db_display = "Connected to local instance"
+    api_display = "Authenticated"
 
     print("\nConfiguration loaded:")
     print(f"Mode: {mode}")
     print(f"Database: {db_display}")
     print(f"API Access: {api_display}")
     print(f"Log Level: {log_level}")
-    print(f"Zion Network: {zion_display}\n")
+    print("Zion Network: Online\n")
 
     verify_security()
-    print("\nThe Oracle sees al configurations")
+    print("\nThe Oracle sees all configurations")
 
 
 if __name__ == "__main__":

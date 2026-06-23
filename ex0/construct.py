@@ -1,19 +1,24 @@
 """script for global and virtual env info"""
 
-import os
 import sys
+import os
 
 
 def is_virtual_env() -> bool:
-    """detects virtual env by comparison"""
+    """
+    detects virtual env by comparison of these 2 installation
+    internal paths.
+    1 base - python installation on OS
+    2 .prefix points to where python is currently executed
+    """
     return sys.prefix != sys.base_prefix
 
 
 def get_package_path() -> str:
-    """gets site-package in a virtual env"""
+    """Looking up from sys.path the site packages dir"""
     try:
         paths = [
-                p for p in sys.path if "site-packages" in p and sys.prefix in p
+                p for p in sys.path if "site-packages" in p
                 ]
         if paths:
             return paths[0]
@@ -38,17 +43,15 @@ def main() -> None:
         print("\nThen run this program again.")
     else:
         env_path: str = sys.prefix
-        env_name: str = os.path.basename(env_path)
-        package_path: str = get_package_path()
         print("MATRIX STATUS: Welcome to the construct")
         print(f"\nCurrent Python: {current_python}")
-        print(f"Virtual Environment: {env_name}")
+        print(f"Virtual Environment: {os.path.basename(env_path)}")
         print(f"Environment Path: {env_path}")
         print("\nSUCCESS: You're in an isolated environment!")
         print("Safe to install packages without affecting")
         print("the global system.")
         print("\nPackage installation path:")
-        print(package_path)
+        print(get_package_path())
 
 
 if __name__ == "__main__":
